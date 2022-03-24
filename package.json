@@ -1,7 +1,7 @@
 {
-  "name": "translime-plugin-my-plugin",
+  "name": "translime-plugin-namesilo-dns",
   "version": "1.0.0",
-  "description": "a plugin template",
+  "description": "translime plugin",
   "license": "MIT",
   "keywords": [
     "translime",
@@ -20,24 +20,29 @@
     "src"
   ],
   "scripts": {
-    "dev": "vite build -c vite.config.js --watch",
+    "dev": "vite -c ui.vite.config.js",
     "build:plugin": "vite build",
     "build:ui": "vite build -c ui.vite.config.js",
     "build": "yarn build:plugin && yarn build:ui"
   },
   "devDependencies": {
+    "@preact/preset-vite": "^2.1.7",
     "eslint": "7.32.0",
     "eslint-config-airbnb-base": "14.2.1",
+    "eslint-config-preact": "^1.3.0",
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "2.25.2",
-    "eslint-plugin-vue": "7.20.0",
-    "vite": "^2.7.2",
-    "vite-plugin-vue2": "^1.9.3",
-    "vue-template-compiler": "^2.6.14"
+    "jest": "^27.5.1",
+    "vite": "^2.7.2"
   },
   "plugin": {
-    "title": "translime plugin template",
-    "description": "插件模板",
-    "ui": "dist/ui.umd.js"
+    "title": "namesilo dns",
+    "description": "定时获取ip并设定为namesilo的域名解析",
+    "windowUrl": "http://localhost:3000/ui.html"
+  },
+  "dependencies": {
+    "axios": "^0.26.1",
+    "fast-xml-parser": "^4.0.7",
+    "preact": "^10.6.6"
   }
 }

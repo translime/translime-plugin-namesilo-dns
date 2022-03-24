@@ -6,16 +6,13 @@ module.exports = {
     browser: true,
   },
   extends: [
-    'plugin:vue/essential',
+    'preact',
     'airbnb-base',
   ],
   parserOptions: {
     ecmaVersion: 12,
     sourceType: 'module',
   },
-  plugins: [
-    'vue',
-  ],
   ignorePatterns: [
     'node_modules/**',
     '**/dist/**',
@@ -32,7 +29,6 @@ module.exports = {
     'no-param-reassign': ['error', {
       props: true,
       ignorePropertyModificationsFor: [
-        'state', // for vuex state
         'acc', // for reduce accumulators
         'e', // for e.returnvalue
       ],

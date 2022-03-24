@@ -1,12 +1,102 @@
+import axios from 'axios';
+import xmlParser from 'fast-xml-parser';
 import pkg from '../package.json';
 
 const id = pkg.name;
 
+let timer;
+const logs = [];
+const pushLog = (log) => {
+  logs.push(`${(new Date()).toString()}: ${log}`);
+  if (logs.length > 300) {
+    logs.shift();
+  }
+  global.ipc.sendToClient('logs', logs, global.childWins[`plugin-window-${id}`]);
+};
+const getIp = (type = 4) => new Promise(async (resolve, reject) => {
+  const url = type === 6 ? 'https://ipv6.icanhazip.com' : 'https://icanhazip.com';
+  try {
+    const { data } = await axios.get(url);
+    resolve(data.trim());
+  } catch (err) {
+    reject(new Error('获取 ip 失败'));
+  }
+});
+const getRecords = (sub, domain, apiKey) => new Promise(async (resolve, reject) => {
+  try {
+    const { data } = await axios.get(`https://www.namesilo.com/api/dnsListRecords?version=1&type=xml&key=${apiKey}&domain=${domain}`, {
+      responseType: 'text',
+    });
+    const { namesilo } = xmlParser.parse(data);
+    if (+namesilo.reply.code !== 300 || namesilo.reply.detail !== 'success') {
+      reject(new Error(`获取 dns 记录失败: ${namesilo.reply.detail}(${namesilo.reply.code})`));
+    }
+    resolve(namesilo.reply.resource_record);
+  } catch (err) {
+    reject(err);
+  }
+});
+const getRecord = (sub, domain, apiKey, type = 4) => new Promise(async (resolve, reject) => {
+  const recordType = type === 6 ? 'AAAA' : 'A';
+  try {
+    const records = await getRecords(sub, domain, apiKey);
+    const currentRecord = records.find((r) => r.host === `${sub}.${domain}` && r.type === recordType);
+    if (!currentRecord) {
+      reject(new Error('没有指定的 dns 记录'));
+    }
+  } catch (err) {
+    reject(err);
+  }
+});
+const setRecord = (sub, domain, apiKey, recordId, ip) => new Promise(async (resolve, reject) => {
+  try {
+    const { data } = await axios.get(`https://www.namesilo.com/api/dnsUpdateRecord?version=1&type=xml&key=${apiKey}&domain=${domain}&rrid=${recordId}&rrhost=${sub}&rrvalue=${ip}&rrttl=3600`, {
+      responseType: 'text',
+    });
+    const { namesilo } = xmlParser.parse(data);
+    if (+namesilo.reply.code !== 300 || namesilo.reply.detail !== 'success') {
+      reject(new Error(`设置 dns 记录失败: ${namesilo.reply.detail}(${namesilo.reply.code})`));
+    }
+    resolve(namesilo);
+  } catch (err) {
+    reject(new Error('设置 dns 失败'));
+  }
+});
+const main = async (sub, domain, apiKey, type = 4) => {
+  try {
+    const currentRecord = getRecord(sub, domain, apiKey, type);
+    const ip = await getIp(type);
+    if (ip !== currentRecord.value) {
+      await setRecord(sub, domain, apiKey, currentRecord.record_id, ip);
+      pushLog(`dns 已设置为: ${ip}`);
+    } else {
+      pushLog('记录 ip 相同');
+    }
+  } catch (err) {
+    pushLog(err.message);
+  }
+};
+const intervalCall = (sub, domain, apiKey, type) => {
+  main(sub, domain, apiKey, type);
+  timer = setTimeout(() => {
+    intervalCall(sub, domain, apiKey, type);
+  }, 30 * 60 * 1000);
+};
+const start = (type = 4) => {
+  const setting = global.store.get(`plugin.${id}.settings`, {});
+  intervalCall(setting['sub-domain'], setting.domain, setting['api-key'], type);
+};
+const stop = () => {
+  clearTimeout(timer);
+  timer = null;
+};
+
 // 加载时执行
 export const pluginDidLoad = () => {
-  console.log('plugin loaded');
   const setting = global.store.get(`plugin.${id}.settings`, {});
-  console.log('settings: ', setting);
+  if (setting['start-on-bot']) {
+    start(6);
+  }
 };
 
 // 禁用时执行
@@ -16,78 +106,58 @@ export const pluginWillUnload = () => {
 
 // 插件设置表单
 export const settingMenu = [
-  // 文本框
   {
-    key: 'input-1', // 设置储存到配置文件的字段，没有这个字段则取 name 的值
-    type: 'input', // 输入类型
-    name: '文本1', // 输入显示的字段名
-    required: false, // 是否必填
-    placeholder: '输入提示',
-  },
-  // 密码文本框
-  {
+    key: 'api-key',
     type: 'password',
-    name: '密码',
+    name: 'api key',
     required: true,
-    placeholder: '请输入密码',
   },
-  // 开关
   {
+    key: 'sub-domain',
+    type: 'input',
+    name: '子域名',
+    required: true,
+  },
+  {
+    key: 'doamin',
+    type: 'input',
+    name: '域名',
+    required: true,
+  },
+  {
+    key: 'start-on-boot',
     type: 'switch',
-    name: '开关',
-  },
-  // 复选框
-  {
-    type: 'checkbox',
-    name: '复选',
-    choices: [
-      {
-        name: '选择1',
-        value: 'foo',
-      },
-      {
-        name: '选择2',
-        value: 'bar',
-      },
-      {
-        name: '选择3', // 没有 value 则用 name 作为值
-      },
-    ],
-  },
-  // 单选框
-  {
-    type: 'radio',
-    name: '单选',
-    choices: ['foo', 'bar'], // 可以使用复选框的方式，也可直接用文本数组，默认选择第一个
-  },
-  // 下拉菜单
-  {
-    type: 'list',
-    name: '下拉菜单',
-    required: true,
-    choices: ['foo', 'bar'],
-  },
-];
-
-// 插件上下文菜单
-// https://www.electronjs.org/zh/docs/latest/api/menu-item
-export const pluginMenu = [
-  {
-    id: `${id}-custom-menu`,
-    label: 'custom menu',
-    click() {
-      console.log('custom menu clicked');
-    },
+    name: '启动app时自动运行',
   },
 ];
 
 // ipc 定义
 export const ipcHandlers = [
   {
-    type: 'test-ipc', // 调用时需加上`@${id}`，此处为 'test-ipc@translime-plugin-my-plugin'
-    handler: ({ sendToClient }) => (arg1, arg2) => {
-      console.log('test-ipc', 'test ipc from plugin: ', arg1, arg2);
-      sendToClient(`test-ipc-reply@${id}`, 'test ipc reply from plugin');
+    type: 'start',
+    handler: () => (type = 4) => {
+      start(type);
     },
   },
+  {
+    type: 'stop',
+    handler: () => () => {
+      stop();
+    },
+  },
+  {
+    type: 'isRunning',
+    handler: () => () => Promise.resolve(!!timer),
+  },
 ];
+
+// 窗口选项
+export const windowOptions = {
+  minWidth: 320,
+  width: 320,
+  height: 240,
+  frame: false,
+  resizable: false,
+  transparent: true,
+  titleBarStyle: 'default',
+};

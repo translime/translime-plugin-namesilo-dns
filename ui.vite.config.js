@@ -1,16 +1,14 @@
-import { builtinModules } from 'module';
-import { createVuePlugin } from 'vite-plugin-vue2';
-import pkg from './package.json';
+import { resolve } from 'path';
+import preact from '@preact/preset-vite';
 
 /**
  * @type {import('vite').UserConfig}
  * @see https://vitejs.dev/config/
  */
 const config = {
-  plugins: [
-    createVuePlugin(),
-  ],
+  plugins: [preact()],
   envDir: process.cwd(),
+  base: './',
   build: {
     sourcemap: false,
     target: 'node14',
@@ -22,21 +20,10 @@ const config = {
       },
       safari10: false,
     },
-    lib: {
-      entry: 'src/ui.vue',
-      name: pkg.name, // 需要指定一个唯一 id
-      fileName: (format) => `ui.${format}.js`,
-    },
     cssCodeSplit: true,
     rollupOptions: {
-      external: [
-        'vue',
-        ...builtinModules,
-      ],
-      output: {
-        globals: {
-          vue: 'Vue',
-        },
+      input: {
+        ui: resolve(__dirname, 'ui.html'),
       },
     },
     emptyOutDir: false,
