@@ -1,13 +1,26 @@
+import path from 'path';
+import fs from 'fs';
 import axios from 'axios';
 import xmlParser from 'fast-xml-parser';
 import pkg from '../package.json';
 
 const id = pkg.name;
+const pluginDir = path.resolve(global.APPDATA_PATH, 'namesoli-dns');
+const logFile = path.resolve(pluginDir, 'logs.txt');
 
 let timer;
+const checkPluginDir = () => {
+  fs.access(pluginDir, fs.constants.F_OK, (err) => {
+    if (err) {
+      fs.mkdirSync(pluginDir);
+    }
+  });
+};
 const logs = [];
 const pushLog = (log) => {
-  logs.push(`${(new Date()).toString()}: ${log}`);
+  const logContent = `${(new Date()).toString()}: ${log}`;
+  logs.push(logContent);
+  fs.appendFileSync(logFile, `${logContent}\n`);
   if (logs.length > 300) {
     logs.shift();
   }
@@ -84,6 +97,10 @@ const intervalCall = (sub, domain, apiKey, type) => {
 };
 const start = (type = 4) => {
   const setting = global.store.get(`plugin.${id}.settings`, {});
+  if (!setting['sub-domain'] || !setting.domain || !setting['api-key']) {
+    pushLog('请先配置');
+    return;
+  }
   intervalCall(setting['sub-domain'], setting.domain, setting['api-key'], type);
 };
 const stop = () => {
@@ -93,6 +110,7 @@ const stop = () => {
 
 // 加载时执行
 export const pluginDidLoad = () => {
+  checkPluginDir();
   const setting = global.store.get(`plugin.${id}.settings`, {});
   if (setting['start-on-bot']) {
     start(6);

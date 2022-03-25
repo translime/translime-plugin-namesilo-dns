@@ -1,14 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html {
-  -webkit-app-region: drag;
+  color: #fff;
 }
 
 body {
   display: flex;
-    width: 100vw;
-    height: 100vh;
+  width: 100vw;
+  height: 100vh;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
@@ -17,13 +22,22 @@ h1 {
   margin: 0;
 }
 
-button, a {
-  -webkit-app-region: no-drag;
-}
-
 #app {
+  @apply flex flex-col;
   width: 100%;
   height: 100%;
-  border-radius: 16px;
-  background-color: #fff;
+}
+
+#app button {
+  @apply rounded-sm px-2 py-1 bg-stone-900 hover:bg-stone-600 leading-none;
+}
+
+.main {
+  @apply flex-grow p-2;
+  background-color: #1f1f1f;
+  opacity: .4;
+}
+
+html:hover .main {
+  opacity: .8;
 }
