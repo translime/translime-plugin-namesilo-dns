@@ -26,7 +26,6 @@ const config = {
     emptyOutDir: true,
     rollupOptions: {
       external: [
-        'http-server',
         ...builtinModules,
       ],
     },
