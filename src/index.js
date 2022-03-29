@@ -64,6 +64,7 @@ const getRecord = (sub, domain, apiKey, type = 4) => new Promise(async (resolve,
     if (!currentRecord) {
       reject(new Error('没有指定的 dns 记录'));
     }
+    resolve(currentRecord);
   } catch (err) {
     reject(err);
   }
@@ -109,6 +110,9 @@ const intervalCall = (sub, domain, apiKey, type = 4) => {
   }, 30 * 60 * 1000);
 };
 const start = () => {
+  if (timer) {
+    return;
+  }
   const setting = global.store.get(`plugin.${id}.settings`, {});
   if (!setting['sub-domain'] || !setting.domain || !setting['api-key']) {
     console.log(setting, !setting['sub-domain'], !setting.domain, !setting['api-key']);
@@ -198,7 +202,10 @@ export const ipcHandlers = [
   },
   {
     type: 'isRunning',
-    handler: () => () => Promise.resolve(!!timer),
+    handler: () => () => {
+      global.ipc.sendToClient('logs', logs, global.childWins[`plugin-window-${id}`]);
+      return Promise.resolve(!!timer);
+    },
   },
 ];
 

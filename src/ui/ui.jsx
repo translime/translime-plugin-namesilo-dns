@@ -6,6 +6,9 @@ const ipc = window.electron.useIpc();
 const start = () => {
   ipc.send('start@translime-plugin-namesilo-dns', 4);
 };
+const stop = () => {
+  ipc.send('stop@translime-plugin-namesilo-dns', 4);
+};
 const openLogDir = () => {
   ipc.send('open-dir', { dirPath: `${window.electron.APPDATA_PATH}/namesoli-dns` });
 };
@@ -18,9 +21,25 @@ export default function Ui() {
     });
   };
 
+  const [isRunning, setIsRunning] = useState(false);
+  const checkIsRunning = async () => {
+    const result = await ipc.invoke('isRunning@translime-plugin-namesilo-dns');
+    setIsRunning(result);
+  };
+
   useEffect(() => {
     onLog();
-  });
+    checkIsRunning();
+  }, []);
+
+  const handleStart = () => {
+    start();
+    setIsRunning(true);
+  };
+  const handleStop = () => {
+    stop();
+    setIsRunning(false);
+  };
 
   return (
     <>
@@ -28,7 +47,11 @@ export default function Ui() {
 
       <main className="main">
         <div>
-          <button onClick={start}>start</button>
+          {
+            !isRunning
+              ? <button onClick={handleStart}>定时执行</button>
+              : <button onClick={handleStop}>停止</button>
+          }
         </div>
 
         <div className="flex items-center mt-2">
