@@ -130,7 +130,7 @@ const stop = () => {
 export const pluginDidLoad = () => {
   checkPluginDir();
   const setting = global.store.get(`plugin.${id}.settings`, {});
-  if (setting['start-on-bot']) {
+  if (setting['start-on-boot']) {
     start();
   }
 };
