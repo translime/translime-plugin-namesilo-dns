@@ -27,7 +27,9 @@ const pushLog = (log) => {
   if (logs.length > 300) {
     logs.shift();
   }
-  global.ipc.sendToClient('logs', logs, global.childWins[`plugin-window-${id}`]);
+  if (global.childWins[`plugin-window-${id}`]) {
+    global.ipc.sendToClient('logs', logs, global.childWins[`plugin-window-${id}`]);
+  }
 };
 const getIp = (type = 4) => new Promise(async (resolve, reject) => {
   const url = type === 6 ? 'https://ipv6.icanhazip.com' : 'https://icanhazip.com';
@@ -203,7 +205,9 @@ export const ipcHandlers = [
   {
     type: 'isRunning',
     handler: () => () => {
-      global.ipc.sendToClient('logs', logs, global.childWins[`plugin-window-${id}`]);
+      if (global.childWins[`plugin-window-${id}`]) {
+        global.ipc.sendToClient('logs', logs, global.childWins[`plugin-window-${id}`]);
+      }
       return Promise.resolve(!!timer);
     },
   },
