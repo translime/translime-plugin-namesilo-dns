@@ -1,4 +1,6 @@
-import { builtinModules } from 'module';
+import { builtinModules } from 'node:module';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 
 /**
  * @type {import('vite').UserConfig}
@@ -7,24 +9,22 @@ import { builtinModules } from 'module';
 const config = {
   envDir: process.cwd(),
   build: {
-    sourcemap: false,
-    target: 'node14',
+    minify: false,
+    sourcemap: 'inline',
+    target: 'node16',
     outDir: './dist',
-    assetsDir: '.',
-    terserOptions: {
-      ecma: 2021,
-      compress: {
-        passes: 2,
-      },
-      safari10: false,
-    },
+    emptyOutDir: true,
     lib: {
       entry: 'src/index.js',
       name: 'plugin',
+      formats: ['es', 'umd'],
       fileName: (format) => `index.${format}.js`,
     },
-    emptyOutDir: true,
     rollupOptions: {
+      plugins: [
+        resolve(),
+        commonjs(),
+      ],
       external: [
         ...builtinModules,
       ],

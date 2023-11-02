@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import preact from '@preact/preset-vite';
 
 /**
@@ -10,16 +10,10 @@ const config = {
   envDir: process.cwd(),
   base: './',
   build: {
-    sourcemap: false,
-    target: 'node14',
+    minify: false,
+    sourcemap: 'inline',
+    target: 'node16',
     outDir: './dist',
-    terserOptions: {
-      ecma: 2021,
-      compress: {
-        passes: 2,
-      },
-      safari10: false,
-    },
     cssCodeSplit: true,
     rollupOptions: {
       input: {
